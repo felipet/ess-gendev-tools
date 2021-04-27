@@ -52,3 +52,23 @@ class ConnTimeout(Exception):
             return 'ConnTimeout, {0} '.format(self.message)
         else:
             return 'ConnTimeout has been raised'
+
+
+class FeatureNotSupported(Exception):
+    """Feature not supported exception.
+
+    This exception is raised when a feature is not possible with the given
+    valid communication interfaces to the MCH.
+    """
+
+    def __init__(self, *args):
+        if args:
+            self.message = args[0]
+        else:
+            self.message = None
+
+    def __str__(self):
+        if self.message:
+            return 'ConnTimeout, {0} '.format(self.message)
+        else:
+            return 'ConnTimeout has been raised'

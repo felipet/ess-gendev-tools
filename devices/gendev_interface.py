@@ -92,11 +92,12 @@ class GenDevInterface(metaclass=abc.ABCMeta):
     def device_info(self) -> dict:
         """Retrieve the main information about the device.
 
-        Returns:
-            A dictionary with the device information.
+        The information is returned in a dictionary with 2 categories:
+        *board* and *network*.
 
-        Raises:
-            ConnectionError: If the device is not accessible
+        Returns:
+            If success, a dictionary with the device information.
+            If failure, an empty dictionary on failure.
         """
         raise NotImplementedError
 
@@ -180,7 +181,7 @@ class GenDevInterface(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _reboot(self, timeout: int = 0):
+    def _reboot(self, sleep: int = 50):
         """Internal method to reboot the MCH after a timeout.
 
         Args:

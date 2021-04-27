@@ -179,10 +179,10 @@ class NATMCHTelnet():
                 raw_info_network).group(1)
             resp_dict['network']['mac_address'] = self._match_mac_addr.search(
                 raw_info_network).group(1)
-            resp_dict['network']['subnet_address'] = self._match_subnet_mask.search(
-                raw_info_network).group(1)
-            resp_dict['network']['gateway_address'] = self._match_gateway_addr.search(
-                raw_info_network).group(1)
+            resp_dict['network']['subnet_address'] =\
+                self._match_subnet_mask.search(raw_info_network).group(1)
+            resp_dict['network']['gateway_address'] = \
+                self._match_gateway_addr.search(raw_info_network).group(1)
 
         else:
             resp_dict = dict()
@@ -192,9 +192,10 @@ class NATMCHTelnet():
     def update_fw(self, fw_version: str, part: str = "MCH") -> tuple:
         """Update the firmware of the device.
 
-        This method expect the firmware binary pointed by the value of the
+        This method expects the firmware binary pointed by the value of the
         argument *fw_version* to be available in the TFTP server.
-        Mainly, this method injects the command *update_firmware* to an NAT MCH.
+        Mainly, this method injects the command *update_firmware* to an NAT
+        MCH.
 
         Args:
             fw_version: version release number for the new fw.
