@@ -7,6 +7,8 @@ gendev_err.py
 Custom exeception types for the GenDev Tools library.
 """
 
+__all__ = ['ConnNotImplemented', 'ConnTimeout', 'NoRouteToDevice',
+           'FeatureNotSupported']
 __author__ = "Felipe Torres González"
 __copyright__ = "Copyright 2021, ESS MCH Tools"
 __credits__ = ["Felipe Torres González", "Ross Elliot", "Jeong Han Lee"]
@@ -52,6 +54,23 @@ class ConnTimeout(Exception):
             return 'ConnTimeout, {0} '.format(self.message)
         else:
             return 'ConnTimeout has been raised'
+
+
+class NoRouteToDevice(Exception):
+    """Connection timeout Exception.
+    """
+
+    def __init__(self, *args):
+        if args:
+            self.message = args[0]
+        else:
+            self.message = None
+
+    def __str__(self):
+        if self.message:
+            return 'NoRouteToDevice, {0} '.format(self.message)
+        else:
+            return 'NoRouteToDevice has been raised'
 
 
 class FeatureNotSupported(Exception):

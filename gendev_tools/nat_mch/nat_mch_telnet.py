@@ -19,7 +19,7 @@ the communication via the MHC web interface.
 import re
 import time
 import socket
-from ..gendev_err import ConnTimeout
+from ..gendev_err import ConnTimeout, NoRouteToDevice
 from telnetlib import Telnet
 from logging import Logger
 
@@ -60,6 +60,7 @@ class NATMCHTelnet():
         Raises:
             gendev_err.ConnTimeout if the device is not reachable.
         """
+        self.ip_address = ip_address
         self._server_ip = '172.30.4.69'
         self._fw_path = 'fw/'
 
@@ -69,6 +70,12 @@ class NATMCHTelnet():
             if isinstance(e, socket.timeout):
                 raise ConnTimeout(
                     "Timeout while opening the link to the MCH using Telnet")
+            elif isinstance(e, OSError):
+                if e.errno == 113:
+                    raise NoRouteToDevice('Check the connectivity to the MCH'
+                                          ' using the IP: {}'.format(
+                                            self.ip_address
+                                          ))
 
         # Regular expresions for extracting the infomration relative to the
         # MCH from the version command.
@@ -222,7 +229,10 @@ class NATMCHTelnet():
         # There's a useless promt which is received first, get rid of it, and
         # wait for the good one that should come when the flashing is finished.
         response = self._session.read_until(b'nat> ')
-        response = self._session.read_until(b'nat> ')
+        # Sometimes, at this point, the buffer has content, sometimes not.
+        # It seems reasonable using a length 100 to detect this situation.
+        if len(response) < 100:
+            response = self._session.read_until(b'nat> ')
         response = response.decode('ascii')
 
         # Let's see if the update was successful. The MCH prints the word
