@@ -1,6 +1,7 @@
 ---
 include:
   - 'https://gitlab.esss.lu.se/ics-infrastructure/gitlab-ci-yml/raw/master/PreCommit.gitlab-ci.yml'
+  - remote: 'https://gitlab.esss.lu.se/ics-infrastructure/gitlab-ci-yml/raw/master/SonarScanner.gitlab-ci.yml'
   
 .runner_tags: &runner_tags
   tags:
@@ -16,3 +17,11 @@ test-python38:
     - pip install tox
   script:
     - tox
+  artifacts:
+    paths:
+      - junit.xml
+      - coverage.xml
+    reports:
+      junit: junit.xml
+    expire_in: 48 hour
+
