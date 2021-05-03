@@ -39,5 +39,5 @@ class TestNATMCHTelnet:
         """Test the update_fw feature when using Telnet"""
         response = self.valid_mch.update_fw(config["update_fw"]["invalid_fw"])
         assert response[0] is False
-        response = self.valid_mch.update_fw(config["update_fw"]["valid_fw"])
-        assert response[0] is True
+        # response = self.valid_mch.update_fw(config["update_fw"]["valid_fw"])
+        # assert response[0] is True
