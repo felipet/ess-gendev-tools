@@ -7,8 +7,12 @@ gendev_err.py
 Custom exeception types for the GenDev Tools library.
 """
 
-__all__ = ['ConnNotImplemented', 'ConnTimeout', 'NoRouteToDevice',
-           'FeatureNotSupported']
+__all__ = [
+    "ConnNotImplemented",
+    "ConnTimeout",
+    "NoRouteToDevice",
+    "FeatureNotSupported",
+]
 __author__ = "Felipe Torres González"
 __copyright__ = "Copyright 2021, ESS MCH Tools"
 __credits__ = ["Felipe Torres González", "Ross Elliot", "Jeong Han Lee"]
@@ -34,14 +38,13 @@ class ConnNotImplemented(Exception):
 
     def __str__(self):
         if self.message:
-            return 'ConnNotImplemented, {0} '.format(self.message)
+            return "ConnNotImplemented, {0} ".format(self.message)
         else:
-            return 'ConnNotImplemented has been raised'
+            return "ConnNotImplemented has been raised"
 
 
 class ConnTimeout(Exception):
-    """Connection timeout Exception.
-    """
+    """Connection timeout Exception."""
 
     def __init__(self, *args):
         if args:
@@ -51,14 +54,13 @@ class ConnTimeout(Exception):
 
     def __str__(self):
         if self.message:
-            return 'ConnTimeout, {0} '.format(self.message)
+            return "ConnTimeout, {0} ".format(self.message)
         else:
-            return 'ConnTimeout has been raised'
+            return "ConnTimeout has been raised"
 
 
 class NoRouteToDevice(Exception):
-    """Connection timeout Exception.
-    """
+    """Connection timeout Exception."""
 
     def __init__(self, *args):
         if args:
@@ -68,9 +70,9 @@ class NoRouteToDevice(Exception):
 
     def __str__(self):
         if self.message:
-            return 'NoRouteToDevice, {0} '.format(self.message)
+            return "NoRouteToDevice, {0} ".format(self.message)
         else:
-            return 'NoRouteToDevice has been raised'
+            return "NoRouteToDevice has been raised"
 
 
 class FeatureNotSupported(Exception):
@@ -88,6 +90,6 @@ class FeatureNotSupported(Exception):
 
     def __str__(self):
         if self.message:
-            return 'ConnTimeout, {0} '.format(self.message)
+            return "ConnTimeout, {0} ".format(self.message)
         else:
-            return 'ConnTimeout has been raised'
+            return "ConnTimeout has been raised"

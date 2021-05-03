@@ -8,10 +8,11 @@ Unit test for the NATMCHTelnet module.
 """
 import sys
 import pytest
-sys.path.append('../../gendev-tools')
+
+sys.path.append("../../gendev-tools")
 try:
     from gendev_tools.nat_mch.nat_mch_telnet import NATMCHTelnet
-    from gendev_tools.gendev_err import *
+    from gendev_tools.gendev_err import ConnTimeout
     from pytest_testconfig import config
 except Exception as e:
     raise e
@@ -27,21 +28,21 @@ __status__ = "Development"
 
 class TestNATMCHTelnet:
     def setup(self):
-        self.valid_mch = NATMCHTelnet(config['valid_ip_address'])
+        self.valid_mch = NATMCHTelnet(config["valid_ip_address"])
 
     def test_timeout(self):
         """Test the access timeout to a device that is down"""
-        with pytest.raises(ConnTimeout) as e:
-            self.invalid_mch = NATMCHTelnet(config['invalid_ip_address'])
+        with pytest.raises(ConnTimeout):
+            self.invalid_mch = NATMCHTelnet(config["invalid_ip_address"])
 
     def test_device_info(self):
         """Test the device_info feature when using Telnet"""
         device_info = self.valid_mch.device_info()
-        assert config['device_info'] == device_info
+        assert config["device_info"] == device_info
 
     def test_update_fw(self):
         """Test the update_fw feature when using Telnet"""
-        response = self.valid_mch.update_fw(config['update_fw']['invalid_fw'])
+        response = self.valid_mch.update_fw(config["update_fw"]["invalid_fw"])
         assert response[0] is False
-        response = self.valid_mch.update_fw(config['update_fw']['valid_fw'])
+        response = self.valid_mch.update_fw(config["update_fw"]["valid_fw"])
         assert response[0] is True

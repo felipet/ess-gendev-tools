@@ -33,7 +33,7 @@ __email__ = "felipe.torresgonzalez@ess.eu"
 __status__ = "Development"
 
 
-class NATMCHTelnet():
+class NATMCHTelnet:
     """NATMCTelnet access an NAT MCH via Telnet.
 
     This module implements some operations using the command line interface
@@ -46,10 +46,7 @@ class NATMCHTelnet():
     - Firmware update of the MCH.
     """
 
-    def __init__(self,
-                 ip_address: str,
-                 port: int = 23,
-                 logger: Logger = None):
+    def __init__(self, ip_address: str, port: int = 23, logger: Logger = None):
         """Class constructor.
 
         Args:
@@ -61,54 +58,36 @@ class NATMCHTelnet():
             gendev_err.ConnTimeout if the device is not reachable.
         """
         self.ip_address = ip_address
-        self._server_ip = '172.30.4.69'
-        self._fw_path = 'fw/'
+        self._server_ip = "172.30.4.69"
+        self._fw_path = "fw/"
 
         try:
             self._session = Telnet(ip_address, port, timeout=10)
         except Exception as e:
             if isinstance(e, socket.timeout):
                 raise ConnTimeout(
-                    "Timeout while opening the link to the MCH using Telnet")
+                    "Timeout while opening the link to the MCH using Telnet"
+                )
             elif isinstance(e, OSError):
                 if e.errno == 113:
-                    raise NoRouteToDevice('Check the connectivity to the MCH'
-                                          ' using the IP: {}'.format(
-                                            self.ip_address
-                                          ))
+                    raise NoRouteToDevice(
+                        "Check the connectivity to the MCH"
+                        " using the IP: {}".format(self.ip_address)
+                    )
 
         # Regular expresions for extracting the infomration relative to the
         # MCH from the version command.
-        self._match_fw_ver = re.compile(
-            r'Firmware (V\d{1,2}\.\d{1,2}\.\d{1,2})'
-        )
+        self._match_fw_ver = re.compile(r"Firmware (V\d{1,2}\.\d{1,2}\.\d{1,2})")
         # Search for the first occurrence of the token FPGA
-        self._match_fpga_ver = re.compile(
-            r'FPGA (V\d{1,2}\.\d{1,2})'
-        )
-        self._match_mcu_ver = re.compile(
-            r'AVR (\d{1,2}\.\d{1,2})'
-        )
-        self._match_board_sn = re.compile(
-            r'sn: (\d{6}-\d{4})'
-        )
-        self._match_ip_addr = re.compile(
-            r'ip address +: +((\d{1,3}\.?){4})'
-        )
-        self._match_mac_addr = re.compile(
-            r'ieee address +: +(([\d\D]{2}:?){6})'
-        )
-        self._match_subnet_mask = re.compile(
-            r'network mask +: +((\d{1,3}\.?){4})'
-        )
-        self._match_gateway_addr = re.compile(
-            r'default gateway +: +((\d{1,3}\.?){4})'
-        )
+        self._match_fpga_ver = re.compile(r"FPGA (V\d{1,2}\.\d{1,2})")
+        self._match_mcu_ver = re.compile(r"AVR (\d{1,2}\.\d{1,2})")
+        self._match_board_sn = re.compile(r"sn: (\d{6}-\d{4})")
+        self._match_ip_addr = re.compile(r"ip address +: +((\d{1,3}\.?){4})")
+        self._match_mac_addr = re.compile(r"ieee address +: +(([\d\D]{2}:?){6})")
+        self._match_subnet_mask = re.compile(r"network mask +: +((\d{1,3}\.?){4})")
+        self._match_gateway_addr = re.compile(r"default gateway +: +((\d{1,3}\.?){4})")
 
-    def _send_command(self,
-                      command: str,
-                      sleep: int = 1,
-                      clear_buffer: bool = True):
+    def _send_command(self, command: str, sleep: int = 1, clear_buffer: bool = True):
         """Internal method for sending a low level command to the MCH.
 
         This command allows forgetting about the particular details of using
@@ -126,10 +105,10 @@ class NATMCHTelnet():
         """
         # clean up
         if clear_buffer:
-            self._session.write(b'\r')
-            self._session.read_until(b'nat> ')
+            self._session.write(b"\r")
+            self._session.read_until(b"nat> ")
             time.sleep(sleep)
-        self._session.write(command.encode('ascii') + b'\r')
+        self._session.write(command.encode("ascii") + b"\r")
         time.sleep(sleep)
 
     def _reboot(self, sleep: int = 50):
@@ -151,7 +130,7 @@ class NATMCHTelnet():
             A string containing the content of the Rx buffer.
         """
         response = self._session.read_very_eager()
-        return response.decode('ascii')
+        return response.decode("ascii")
 
     def device_info(self) -> dict:
         """Retrieve the main information about the device.
@@ -170,26 +149,34 @@ class NATMCHTelnet():
 
         if raw_info_version != "" and raw_info_network != "":
             resp_dict = dict()
-            resp_dict['board'] = dict()
+            resp_dict["board"] = dict()
 
-            resp_dict['board']['fw_ver'] = self._match_fw_ver.search(
-                raw_info_version).group(1)
-            resp_dict['board']['fpga_ver'] = self._match_fpga_ver.search(
-                raw_info_version).group(1)
-            resp_dict['board']['mcu_ver'] = self._match_mcu_ver.search(
-                raw_info_version).group(1)
-            resp_dict['board']['serial_num'] = self._match_board_sn.search(
-                raw_info_version).group(1)
+            resp_dict["board"]["fw_ver"] = self._match_fw_ver.search(
+                raw_info_version
+            ).group(1)
+            resp_dict["board"]["fpga_ver"] = self._match_fpga_ver.search(
+                raw_info_version
+            ).group(1)
+            resp_dict["board"]["mcu_ver"] = self._match_mcu_ver.search(
+                raw_info_version
+            ).group(1)
+            resp_dict["board"]["serial_num"] = self._match_board_sn.search(
+                raw_info_version
+            ).group(1)
 
-            resp_dict['network'] = dict()
-            resp_dict['network']['ip_address'] = self._match_ip_addr.search(
-                raw_info_network).group(1)
-            resp_dict['network']['mac_address'] = self._match_mac_addr.search(
-                raw_info_network).group(1)
-            resp_dict['network']['subnet_address'] =\
-                self._match_subnet_mask.search(raw_info_network).group(1)
-            resp_dict['network']['gateway_address'] = \
-                self._match_gateway_addr.search(raw_info_network).group(1)
+            resp_dict["network"] = dict()
+            resp_dict["network"]["ip_address"] = self._match_ip_addr.search(
+                raw_info_network
+            ).group(1)
+            resp_dict["network"]["mac_address"] = self._match_mac_addr.search(
+                raw_info_network
+            ).group(1)
+            resp_dict["network"]["subnet_address"] = self._match_subnet_mask.search(
+                raw_info_network
+            ).group(1)
+            resp_dict["network"]["gateway_address"] = self._match_gateway_addr.search(
+                raw_info_network
+            ).group(1)
 
         else:
             resp_dict = dict()
@@ -216,40 +203,42 @@ class NATMCHTelnet():
         self._send_command("update_firmware")
         # Avoid clearing the buffer bewteen these commands because it would
         # skip the update mode in the MCH.
-        self._send_command("{}:{}{}/mch_fw_{}.bin".format(
-                self._server_ip,
-                self._fw_path,
-                fw_version,
-                fw_version
+        self._send_command(
+            "{}:{}{}/mch_fw_{}.bin".format(
+                self._server_ip, self._fw_path, fw_version, fw_version
             ),
-            clear_buffer=False)
+            clear_buffer=False,
+        )
         # Erasing the internal memory. If it is attempted to read now from the
         # buffer, it will get the promt.
         time.sleep(30)
         # There's a useless promt which is received first, get rid of it, and
         # wait for the good one that should come when the flashing is finished.
-        response = self._session.read_until(b'nat> ')
+        response = self._session.read_until(b"nat> ")
         # Sometimes, at this point, the buffer has content, sometimes not.
         # It seems reasonable using a length 100 to detect this situation.
         if len(response) < 100:
-            response = self._session.read_until(b'nat> ')
-        response = response.decode('ascii')
+            response = self._session.read_until(b"nat> ")
+        response = response.decode("ascii")
 
         # Let's see if the update was successful. The MCH prints the word
         # "successful" at the end of the process, just before the prompt.
-        if 'successful' in response:
-            success = True,
+        if "successful" in response:
+            success = (True,)
             self._reboot()
             # Finally, wait for the MCH to complete the reboot process
             time.sleep(50)
         else:
             # Something went wrong, let's check it!
-            if 'TFTP: could not get file' in response:
+            if "TFTP: could not get file" in response:
                 # This error is mainly caused when the target fw_version
                 # is not available in the TFTP server.
-                success = False, 'The fw version {} couldn\'t be found in the'\
-                    ' TFTP server'.format(fw_version)
+                success = (
+                    False,
+                    "The fw version {} couldn't be found in the"
+                    " TFTP server".format(fw_version),
+                )
             else:
-                success = False, 'Unknown error. Check the debug log.'
+                success = False, "Unknown error. Check the debug log."
 
         return success

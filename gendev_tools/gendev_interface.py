@@ -62,15 +62,17 @@ class GenDevInterface(metaclass=abc.ABCMeta):
     for this interface.
     """
 
-    def __init__(self,
-                 device_model: str,
-                 manufacturer: str,
-                 serial_num: str,
-                 allowed_conn: list,
-                 hostname: str = None,
-                 vlan: str = None,
-                 mac_address: str = None,
-                 logger: logging.Logger = None):
+    def __init__(
+        self,
+        device_model: str,
+        manufacturer: str,
+        serial_num: str,
+        allowed_conn: list,
+        hostname: str = None,
+        vlan: str = None,
+        mac_address: str = None,
+        logger: logging.Logger = None,
+    ):
         """Class constructor.
 
         Args:

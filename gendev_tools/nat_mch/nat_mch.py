@@ -16,6 +16,7 @@ is achieving a reliable solution with the best performance.
 import logging
 from ..gendev_interface import GenDevInterface, ConnType
 from ..gendev_err import ConnNotImplemented, FeatureNotSupported
+
 # from .nat_mch_web import NATMCHWeb
 from .nat_mch_telnet import NATMCHTelnet
 
@@ -52,16 +53,18 @@ class NATMCH(GenDevInterface):
     check what type of connection is required.
     """
 
-    def __init__(self,
-                 ip_address: str,
-                 allowed_conn: list,
-                 device_model: str = "MCH",
-                 manufacturer: str = "NAT",
-                 serial_num: str = None,
-                 hostname: str = None,
-                 vlan: str = None,
-                 mac_address: str = None,
-                 logger: logging.Logger = None):
+    def __init__(
+        self,
+        ip_address: str,
+        allowed_conn: list,
+        device_model: str = "MCH",
+        manufacturer: str = "NAT",
+        serial_num: str = None,
+        hostname: str = None,
+        vlan: str = None,
+        mac_address: str = None,
+        logger: logging.Logger = None,
+    ):
         """Class constructor.
 
         The attributes that allow to be skipped will be auto filled once the
@@ -105,14 +108,17 @@ class NATMCH(GenDevInterface):
         if ConnType.TELNET in self.allowed_conn:
             self._tel_conn = NATMCHTelnet(self.ip_address)
         if ConnType.SERIAL in self.allowed_conn:
-            raise ConnNotImplemented("The serial interface is not implemented"
-                                     " for NAT MCHs.")
+            raise ConnNotImplemented(
+                "The serial interface is not implemented" " for NAT MCHs."
+            )
         if ConnType.MOXA in self.allowed_conn:
-            raise ConnNotImplemented("The MOXA interface is not implemented"
-                                     " for NAT MCHs.")
+            raise ConnNotImplemented(
+                "The MOXA interface is not implemented" " for NAT MCHs."
+            )
         if ConnType.SSH in self.allowed_conn:
-            raise ConnNotImplemented("The SSH interface is not implemented"
-                                     " for NAT MCHs.")
+            raise ConnNotImplemented(
+                "The SSH interface is not implemented" " for NAT MCHs."
+            )
 
         # TBD: support logging
         # if self.logger is not None:
@@ -143,9 +149,11 @@ class NATMCH(GenDevInterface):
         if ConnType.TELNET in self.allowed_conn:
             response = self._tel_conn.device_info()
         else:
-            raise FeatureNotSupported("Impossible to retrieve the device"
-                                      "information with the given allowed"
-                                      "communication interfaces to the MCH.")
+            raise FeatureNotSupported(
+                "Impossible to retrieve the device"
+                "information with the given allowed"
+                "communication interfaces to the MCH."
+            )
 
         return response
 
@@ -185,9 +193,11 @@ class NATMCH(GenDevInterface):
         if ConnType.TELNET in self.allowed_conn:
             response = self._tel_conn.update_fw(fw_version)
         else:
-            raise FeatureNotSupported("Impossible to update the fw of the"
-                                      " device with the given allowed"
-                                      "communication interfaces to the MCH.")
+            raise FeatureNotSupported(
+                "Impossible to update the fw of the"
+                " device with the given allowed"
+                "communication interfaces to the MCH."
+            )
         return response
 
     def set_configuration(self, category, data, verify=True):
@@ -246,9 +256,11 @@ class NATMCH(GenDevInterface):
         if ConnType.TELNET in self.allowed_conn:
             self._tel_conn._reboot(sleep)
         else:
-            raise FeatureNotSupported("Impossible to reboot the device"
-                                      "with the given allowed"
-                                      "communication interfaces to the MCH.")
+            raise FeatureNotSupported(
+                "Impossible to reboot the device"
+                "with the given allowed"
+                "communication interfaces to the MCH."
+            )
 
     def _parse_config(self):
         """Internal method to parse the configuration of the MCH.
