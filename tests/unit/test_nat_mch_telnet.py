@@ -6,16 +6,11 @@ test_nat_mch_telnet
 
 Unit test for the NATMCHTelnet module.
 """
-import sys
 import pytest
 
-sys.path.append("../../gendev-tools")
-try:
-    from gendev_tools.nat_mch.nat_mch_telnet import NATMCHTelnet
-    from gendev_tools.gendev_err import ConnTimeout
-    from pytest_testconfig import config
-except Exception as e:
-    raise e
+from gendev_tools.nat_mch.nat_mch_telnet import NATMCHTelnet
+from gendev_tools.gendev_err import ConnTimeout
+from pytest_testconfig import config
 
 __author__ = "Felipe Torres González"
 __copyright__ = "Copyright 2021, ESS GenDev Tools"

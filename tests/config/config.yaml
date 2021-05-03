@@ -15,5 +15,5 @@ device_info:
         subnet_address: '255.255.252.0'
         gateway_address: '172.30.7.254'
 update_fw:
-    valid_fw: '2.20.4'
+    valid_fw: '2.21.8'
     invalid_fw: '2.19.4'

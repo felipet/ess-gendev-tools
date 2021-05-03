@@ -1,0 +1,15 @@
+[build-system]
+requires = [ "setuptools >= 40.6.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py38
+
+[testenv]
+deps = 
+    pytest >= 6.2.3
+    pytest-testconfig == 0.2.0
+commands = pytest {posargs: --tc-file=tests/config/config.yaml --tc-format=yaml}
+"""

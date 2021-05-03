@@ -1,0 +1,18 @@
+---
+include:
+  - 'https://gitlab.esss.lu.se/ics-infrastructure/gitlab-ci-yml/raw/master/PreCommit.gitlab-ci.yml'
+  
+.runner_tags: &runner_tags
+  tags:
+    - docker
+
+
+test-python38:
+  <<: *runner_tags
+  stage: test
+  image: python:3.8
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install tox
+  script:
+    - tox
