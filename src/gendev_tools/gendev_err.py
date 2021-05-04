@@ -2,7 +2,7 @@
 
 """
 gendev_err.py
-~~~~~~~~~~
+~~~~~~~~~~~~~
 
 Custom exeception types for the GenDev Tools library.
 """

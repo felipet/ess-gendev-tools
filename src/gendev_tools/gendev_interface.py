@@ -2,7 +2,7 @@
 
 """
 gendev_interface
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 Public API offering some useful features for configuring/maintaining devices
 supported by the ICSHWI WP4.
