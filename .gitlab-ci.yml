@@ -2,7 +2,7 @@
 include:
   - 'https://gitlab.esss.lu.se/ics-infrastructure/gitlab-ci-yml/raw/master/PreCommit.gitlab-ci.yml'
   - remote: 'https://gitlab.esss.lu.se/ics-infrastructure/gitlab-ci-yml/raw/master/SonarScanner.gitlab-ci.yml'
-  
+
 .runner_tags: &runner_tags
   tags:
     - docker
@@ -24,11 +24,9 @@ test 1/2:
     - tox -e py38
   artifacts:
     paths:
-      - junit.xml
+      - unittest.xml
       - coverage.xml
-    reports:
-      junit: junit.xml
-    expire_in: 48 hour
+    expire_in: 24 hour
 
 test 2/2:
   <<: *runner_tags
@@ -41,9 +39,6 @@ test 2/2:
     - tox -e py37
   artifacts:
     paths:
-      - junit.xml
+      - unittest.xml
       - coverage.xml
-    reports:
-      junit: junit.xml
-    expire_in: 48 hour
-
+    expire_in: 24 hour

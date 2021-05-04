@@ -5,11 +5,20 @@ build-backend = "setuptools.build_meta"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py37,py38
+envlist = py37,py38,report
 
 [testenv]
-deps = 
+deps =
     pytest >= 6.2.3
     pytest-testconfig == 0.2.0
-commands = pytest {posargs: --tc-file=tests/config/config.yaml --tc-format=yaml}
+    pytest-cov >= 2.11.1
+commands =
+    pytest {posargs: --tc-file=tests/config/config.yaml --tc-format=yaml --cov gendev_tools --cov-report=xml --junitxml=unittest.xml}
+
+[testenv:report]
+deps = coverage
+skip_install = true
+commands =
+    coverage report
+    coverage html
 """
