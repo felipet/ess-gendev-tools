@@ -1,7 +1,10 @@
 ---
 include:
   - 'https://gitlab.esss.lu.se/ics-infrastructure/gitlab-ci-yml/raw/master/PreCommit.gitlab-ci.yml'
-  - remote: 'https://gitlab.esss.lu.se/ics-infrastructure/gitlab-ci-yml/raw/master/SonarScanner.gitlab-ci.yml'
+
+variables:
+  SONAR_HOST_URL: https://sonarqube.esss.lu.se
+  SONARQUBE_TOKEN: xxxxx
 
 .runner_tags: &runner_tags
   tags:
@@ -17,12 +20,17 @@ test 1/2:
   <<: *runner_tags
   stage: testpy38
   image: python:3.8
+  cache:
+    key: build-cache
+    paths:
+      - .tox/
   before_script:
     - python -m pip install --upgrade pip
     - pip install tox
   script:
     - tox -e py38
   artifacts:
+    untracked: true
     paths:
       - unittest.xml
       - coverage.xml
@@ -37,8 +45,16 @@ test 2/2:
     - pip install tox
   script:
     - tox -e py37
-  artifacts:
+
+run-sonar-scanner:
+  tags:
+    - docker
+  stage: analyse
+  image: sonarsource/sonar-scanner-cli:latest
+  cache:
+    key: build-cache
     paths:
-      - unittest.xml
-      - coverage.xml
-    expire_in: 24 hour
+      - .tox/
+  before_script: []
+  script:
+    - sonar-scanner -Dsonar.login=$SONARQUBE_TOKEN -Dsonar.projectVersion=$CI_COMMIT_REF_NAME
