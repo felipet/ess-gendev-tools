@@ -8,6 +8,7 @@ ESS Generic Device Tools Pylib
 .. image:: https://sonarqube.esss.lu.se/api/project_badges/measure?project=gendev-tools&metric=alert_status
 .. image:: https://sonarqube.esss.lu.se/api/project_badges/measure?project=gendev-tools&metric=ncloc
 .. image:: https://sonarqube.esss.lu.se/api/project_badges/measure?project=gendev-tools&metric=coverage
+.. image:: https://readthedocs.org/projects/ess-generic-devices-tools-pylib/badge/?version=latest
 
 This Python library is scoped within the µTCA management tools project. The
 purpose of this library is providing a set of modules for controlling some
