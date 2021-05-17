@@ -79,6 +79,74 @@ class NATMCHWeb:
         self._match_subnet_mask = re.compile(r"Subnet Mask\n((\d{1,3}\.?){4})")
         self._match_gateway_addr = re.compile(r"Gateway Address\n((\d{1,3}\.?){4})")
 
+    def _parse_basecfg(self, response):
+        """Internal method to parse the HTML content for the base configuration.
+
+        Args:
+            response: The output from the requests.get call.
+
+        Returns:
+            A OrderedDict containing the settings for the base configuration
+            page in the MCH webpage.
+        """
+        mch_config = OrderedDict()
+        html_content = BeautifulSoup(response.text, "html.parser")
+        tables = html_content.body.find_all("table")
+
+        # Each subsection of the MCH Configuration is a different HTML
+        # table. Each table will add a child dictionary to the main one,
+        # indexed by the tr tag label from the HTML code.
+        for table in tables:
+            # Each section has a th tag. Then a set of parameters are included
+            # within the section.
+            table_title = table.th.text.strip()
+            # Set the table heather as the dict key
+            mch_config[table_title] = OrderedDict()
+
+            for row in table.find_all("tr"):
+                # Now, we're inside a section. Two kinds of parameters:
+                # - parameters with a numeric value
+                # - parameters with a select
+
+                select_params = row.find("select")
+                if select_params:
+                    # Form with select values
+                    # 1. First get the name attribute (should use find_all?)
+                    name = select_params["name"].strip()
+                    # 2. Look for the selected value for the given parameter
+                    subrows = row.find_all("option")
+                    value = [r["value"] for r in subrows if "selected" in str(r)][0]
+
+                    # Rough check, but better than nothing
+                    if name is None or value is None:
+                        continue
+
+                    mch_config[table_title][name] = value
+                    # No more stuff to parse for this row
+                    continue
+
+                # Form with input values
+                input_params = row.find_all("input")
+
+                if not input_params:
+                    continue
+
+                # How many fileds does this setting have?
+                if len(input_params) > 1:
+                    name = input_params[0]["name"]
+                    value = [v["value"] for v in input_params]
+                else:
+                    name = input_params[0]["name"]
+                    value = input_params[0]["value"]
+
+                if name is None or value is None:
+                    continue
+                mch_config[table_title][name] = value
+                # No more stuff to parse for this row
+                continue
+
+        return mch_config
+
     def device_info(self) -> dict:
         """Device info method."""
         response = rq.get(
@@ -189,12 +257,11 @@ class NATMCHWeb:
             - On success, a dictionary containing the configuration of the device.
             - If a wrong category was given as input, an empty dictionary.
         """
+        cfgword = "change_mch_cfg" if category == "basecfg" else None
         mch_config = OrderedDict()
 
-        cfgword = "change_mch_cfg" if category == "basecfg" else None
-
         if cfgword is None:
-            return OrderedDict()
+            return mch_config
 
         response = rq.get(
             "http://{}/goform/{}".format(self.ip_address, cfgword),
@@ -203,59 +270,7 @@ class NATMCHWeb:
 
         if response.ok:
             # Let's parse the content
-            html_content = BeautifulSoup(response.text, "html.parser")
-            tables = html_content.body.find_all("table")
-
-            # Each subsection of the MCH Configuration is a different HTML
-            # table. Each table will add a child dictionary to the main one,
-            # indexed by the tr tag label from the HTML code.
-            for table in tables:
-                # Each section has a th tag. Then a set of parameters are included
-                # within the section.
-                table_title = table.th.text.strip()
-                # Set the table heather as the dict key
-                mch_config[table_title] = OrderedDict()
-
-                for row in table.find_all("tr"):
-                    # Now, we're inside a section. Two kinds of parameters:
-                    # - parameters with a numeric value
-                    # - parameters with a select
-
-                    select_params = row.find("select")
-                    if select_params:
-                        # Form with select values
-                        # 1. First get the name attribute (should use find_all?)
-                        name = select_params["name"].strip()
-                        # 2. Look for the selected value for the given parameter
-                        subrows = row.find_all("option")
-                        value = [r["value"] for r in subrows if "selected" in str(r)][0]
-
-                        # Rough check, but better than nothing
-                        if name is None or value is None:
-                            continue
-
-                        mch_config[table_title][name] = value
-                        # No more stuff to parse for this row
-                        continue
-
-                    # Form with input values
-                    input_params = row.find_all("input")
-
-                    if not input_params:
-                        continue
-
-                    # How many fileds does this setting have?
-                    if len(input_params) > 1:
-                        name = input_params[0]["name"]
-                        value = [v["value"] for v in input_params]
-                    else:
-                        name = input_params[0]["name"]
-                        value = input_params[0]["value"]
-
-                    if name is None or value is None:
-                        continue
-                    mch_config[table_title][name] = value
-                    # No more stuff to parse for this row
-                    continue
+            parse_method = getattr(self, "_parse_{}".format(category))
+            mch_config = parse_method(response)
 
         return mch_config
