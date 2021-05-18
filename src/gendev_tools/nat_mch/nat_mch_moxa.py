@@ -2,10 +2,10 @@
 
 """
 nat_mch_moxa.py
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 Communication via Moxa is performed via a telnet connection. Therefore,
-the Moxa class is implenented as a child class that inherits from NATMCHTelnet.
+the Moxa class is implemented as a child class that inherits from NATMCHTelnet.
 As such, all operations supported by the telnet class are supported by the MOXA
 class.
 """
@@ -16,7 +16,7 @@ from logging import Logger
 
 __author__ = "Ross Elliot"
 __copyright__ = "Copyright 2021, ESS MTCA Tools"
-__credits__ = ["Felipe Torres González", "Ross Elliot", "Jeong Han Lee"]
+__credits__ = ["Felipe Torres González", "Jeong Han Lee"]
 __license__ = "GPL-3.0"
 __version__ = "0.1"
 __maintainer__ = "Ross Elliot"

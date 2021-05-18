@@ -20,10 +20,10 @@ gendev\_tools.nat\_mch.nat\_mch\_telnet module
    :undoc-members:
    :show-inheritance:
 
-gendev\_tools.nat\_mch.nat\_mch\_web module
--------------------------------------------
+gendev\_tools.nat\_mch.nat\_mch\_moxa module
+--------------------------------------------
 
-.. automodule:: gendev_tools.nat_mch.nat_mch_web
+.. automodule:: gendev_tools.nat_mch.nat_mch_moxa
    :members:
    :undoc-members:
    :show-inheritance:

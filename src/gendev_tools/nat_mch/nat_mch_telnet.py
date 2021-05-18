@@ -24,9 +24,9 @@ from ..gendev_err import ConnTimeout, NoRouteToDevice
 from telnetlib import Telnet
 from logging import Logger
 
-__author__ = "Felipe Torres González"
+__author__ = ["Felipe Torres González", "Ross Elliot"]
 __copyright__ = "Copyright 2021, ESS MTCA Tools"
-__credits__ = ["Felipe Torres González", "Ross Elliot", "Jeong Han Lee"]
+__credits__ = ["Jeong Han Lee"]
 __license__ = "GPL-3.0"
 __version__ = "0.1"
 __maintainer__ = "Felipe Torres González"
