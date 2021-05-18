@@ -93,3 +93,23 @@ class FeatureNotSupported(Exception):
             return "ConnTimeout, {0} ".format(self.message)
         else:
             return "ConnTimeout has been raised"
+
+
+class DHCPEnableFailed(Exception):
+    """DHCP mode enable failed exception.
+
+    This exception is raised when the enabling of DHCP mode
+    has failed.
+    """
+
+    def __init__(self, *args):
+        if args:
+            self.message = args[0]
+        else:
+            self.message = None
+
+    def __str__(self):
+        if self.message:
+            return " DHCPEnableFailed, {0} ".format(self.message)
+        else:
+            return "DHCPEnableFailed"

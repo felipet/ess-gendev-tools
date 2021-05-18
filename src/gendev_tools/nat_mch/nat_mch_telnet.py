@@ -19,6 +19,7 @@ the communication via the MHC web interface.
 import re
 import time
 import socket
+import ipaddress
 from ..gendev_err import ConnTimeout, NoRouteToDevice
 from telnetlib import Telnet
 from logging import Logger
@@ -44,25 +45,43 @@ class NATMCHTelnet:
     Supported operations:
     - Retrieve the general information of the MCH.
     - Firmware update of the MCH.
+    - Enable DHCP mode of the MCH.
     """
 
-    def __init__(self, ip_address: str, port: int = 23, logger: Logger = None):
+    def __init__(
+        self,
+        ip_address: str,
+        port: int = 23,
+        logger: Logger = None,
+        hostname: str = None,
+        telnet_ip_address: str = None,
+    ):
         """Class constructor.
 
         Args:
             ip_address: the IP address of the MCH.
-            port: port of the Telnet service (usually, 23)
-            logger: reference to a logger that is being used
+            port: port of the Telnet service (usually, 23).
+            logger: reference to a logger that is being used.
+            hostname: hostname of the MCH.
+            telnet_ip_address (optional): the ip address of the telnet
+            connection, if not equal to the IP address of the MCH, i.e. when
+            connecting via a MOXA.
 
         Raises:
             gendev_err.ConnTimeout if the device is not reachable.
         """
         self.ip_address = ip_address
+        self.hostname = hostname
         self._server_ip = "172.30.4.69"
         self._fw_path = "fw/"
+        self._telnet_ip_address = telnet_ip_address
+
+        # If no telnet IP address is provided, use MCH IP address
+        if telnet_ip_address is None:
+            self._telnet_ip_address = self.ip_address
 
         try:
-            self._session = Telnet(ip_address, port, timeout=10)
+            self._session = Telnet(self._telnet_ip_address, port, timeout=10)
         except Exception as e:
             if isinstance(e, socket.timeout):
                 raise ConnTimeout(
@@ -72,7 +91,7 @@ class NATMCHTelnet:
                 if e.errno == 113:
                     raise NoRouteToDevice(
                         "Check the connectivity to the MCH"
-                        " using the IP: {}".format(self.ip_address)
+                        " using the IP: {}".format(self._telnet_ip_address)
                     )
 
         # Regular expresions for extracting the infomration relative to the
@@ -86,6 +105,19 @@ class NATMCHTelnet:
         self._match_mac_addr = re.compile(r"ieee address +: +(([\d\D]{2}:?){6})")
         self._match_subnet_mask = re.compile(r"network mask +: +((\d{1,3}\.?){4})")
         self._match_gateway_addr = re.compile(r"default gateway +: +((\d{1,3}\.?){4})")
+        self._match_hostname = re.compile("hostname +: (.+?(?=\r))")
+        self._match_dhcp_state = re.compile("dhcp state +: (.+?(?=\r))")
+
+    def _send_backspace(self, sleep: float = 0.25):
+        """Internal method to write a backspace character to the MCH console.
+
+        Some fields in the MCH interface are already populated, and must be
+        cleared before writing the new value. The only way to do this is to
+        issue a backspace character.
+        """
+        # Backspace is ASCII character 0x08, or special character ''\b'
+        self._session.write(b"\b")
+        time.sleep(sleep)
 
     def _send_command(self, command: str, sleep: int = 1, clear_buffer: bool = True):
         """Internal method for sending a low level command to the MCH.
@@ -132,6 +164,135 @@ class NATMCHTelnet:
         response = self._session.read_very_eager()
         return response.decode("ascii")
 
+    def _set_hostname(self):
+        """Sets the hostname of the MCH device.
+
+        Returns:
+            True on success.
+            False on failure.
+        """
+        self._send_command("mchcfg")
+        # Modify
+        self._send_command("11", clear_buffer=False)
+        # Clear previous entry
+        for num in range(0, 50):
+            self._send_backspace()
+        self._send_command(self.hostname, clear_buffer=False)
+        self._send_command("q", clear_buffer=False)
+
+        success = self._check_hostname()
+
+        return success
+
+    def _check_hostname(self):
+        """Checks that the hostname set on the MCH matches
+        the value provided.
+
+        Returns:
+            True if the hostname setting matches the expected string.
+            False if the hostname setting does not match the expected string.
+        """
+
+        self._send_command("ni")
+        network_info = self._read_command()
+
+        mch_hostname = self._match_hostname.search(network_info).group(1)
+
+        success = False
+        if mch_hostname == self.hostname:
+            success = True
+
+        return success
+
+    def _enable_dhcp(self):
+        """Enables DHCP mode on the MCH
+
+        Returns:
+            True if DHCP was enabled successfully.
+            False if DHCP setting failed.
+        """
+
+        self._send_command("mchcfg")
+        self._send_command("3", clear_buffer=False)
+        for i in range(0, 4):
+            self._send_command("", clear_buffer=False)
+        self._send_command("2", clear_buffer=False)
+        for i in range(0, 8):
+            self._send_command("", clear_buffer=False)
+        self._send_command("q", clear_buffer=False)
+
+        success = self._check_dhcp()
+
+        return success
+
+    def _check_dhcp(self):
+        """Check wether DHCP is enabled.
+
+        Returns:
+            True if DHCP is enabled
+            False if DHCP is disabled
+        """
+
+        self._send_command("ni")
+        network_info = self._read_command()
+
+        dhcp_state = self._match_dhcp_state.search(network_info).group(1)
+        enabled = False
+        if dhcp_state == " enabled":
+            enabled = True
+
+        return enabled
+
+    def _clear_ip_address(self):
+        """Helper method to send enough backspace characters
+        to clear an IP address
+        """
+
+        # Maximum length of an IP address is 15 characters
+        for i in range(0, 15):
+            self._send_backspace()
+
+    def _set_ip_addr(self):
+        """Set the IP address of the MCH device."""
+        # Get network information
+        self._send_command("ni")
+        network_info = self._read_command()
+
+        # Retrieve gateway address and netmask from network info
+        gateway_addr = self._match_gateway_addr.search(network_info).group(1)
+        netmask = self._match_subnet_mask.search(network_info).group(1)
+
+        # Calculate broadcast ip_address
+        ipv4net = ipaddress.IPv4Network(self.ip_address + "/" + netmask, False)
+        broadcast_addr = ipv4net.broadcast_address.compressed
+
+        # Trigger IP setting menu
+        self._send_command("ip")
+
+        # Clear the existing IP address, and update with new value
+        self._clear_ip_address()
+        self._send_command(self.ip_address, clear_buffer=False)
+        # Clear the existing netmask, and update with new value
+        self._clear_ip_address()
+        self._send_command(netmask, clear_buffer=False)
+        # Clear the existing broadcast address, and update with new value
+        self._clear_ip_address()
+        self._send_command(broadcast_addr, clear_buffer=False)
+        # Clear the existing gateway address, and update with new value
+        self._clear_ip_address()
+        self._send_command(gateway_addr, clear_buffer=False)
+
+        # Check we are at the confirmation prompt
+        response = self._read_command()
+        if not response.endswith("Are you really sure ?"):
+            return False  # Failure
+
+        # Issue confirmation 'y'
+        self._send_command("y", clear_buffer=False)
+
+        # Success
+        return True
+
     def device_info(self) -> dict:
         """Retrieve the main information about the device.
 
@@ -163,7 +324,6 @@ class NATMCHTelnet:
             resp_dict["board"]["serial_num"] = self._match_board_sn.search(
                 raw_info_version
             ).group(1)
-
             resp_dict["network"] = dict()
             resp_dict["network"]["ip_address"] = self._match_ip_addr.search(
                 raw_info_network
@@ -182,6 +342,52 @@ class NATMCHTelnet:
             resp_dict = dict()
 
         return resp_dict
+
+    def set_dhcp_mode(self):
+        """Enables DHCP mode in the network configuration of the device.
+
+        Performs the following steps:
+            - Enables DHCP mode on the MCH.
+            - Sets the internal IP address value to match the address
+              provided by the DHCP server(required to prevent DHCP lease
+              issues).
+            - Sets the hostname value.
+
+        Returns
+            If failure, a tuple containing False, and a message about the
+            failure.
+            If success, a tuple containing True, and an empty string.
+
+        Raises:
+            ConnectionError: If the device is not accessible.
+            NoValidConn: If no valid connection types supporting this feature
+                         are used by the device.
+        """
+
+        total_success = True
+        success = [True] * 3
+        response = ""
+
+        # Enable DHCP mode
+        success[0] = self._enable_dhcp()
+        if not success[0]:
+            response = "Enabling of DHCP mode failed.\r\n"
+
+        # Set the internal IP address
+        success[1] = self._set_ip_addr()
+        if not success[1]:
+            response = response + "Setting IP address failed.\r\n"
+
+        # Set the hostname
+        success[2] = self._set_hostname()
+        if not success[2]:
+            response = response + "Setting hostname failed.\r\n"
+
+        # If any of the subtasks failed, fail overall
+        if False in success:
+            total_success = False
+
+        return total_success, response
 
     def update_fw(self, fw_version: str, part: str = "MCH") -> tuple:
         """Update the firmware of the device.

@@ -38,7 +38,14 @@ class NATMCHMoxa(NATMCHTelnet):
     - Enabling of DHCP on the MCH.
     """
 
-    def __init__(self, ip_address: str, port: int, logger: Logger = None):
+    def __init__(
+        self,
+        mch_ip_address: str,
+        moxa_ip_address: str,
+        port: int,
+        logger: Logger = None,
+        hostname: str = None,
+    ):
         """Class constructor.
 
         Args:
@@ -55,9 +62,16 @@ class NATMCHMoxa(NATMCHTelnet):
         (0 <= port <= 16), "Moxa port must be in range of [0 to 16]"
         # Real Telnet port used to connect to Moxa is in range of [4000 t0 4016]
         self.port = 4000 + port
+        self.moxa_ip_address = moxa_ip_address
 
         # Initialise parent class and inherit methods and properties
-        super().__init__(ip_address, self.port, logger)
+        super().__init__(
+            mch_ip_address,
+            self.port,
+            logger,
+            hostname,
+            moxa_ip_address,
+        )
 
     def _send_command(
         self,
@@ -66,12 +80,16 @@ class NATMCHMoxa(NATMCHTelnet):
         clear_buffer: bool = True,
         chunk_size: int = 3,
     ):
-        """Internal method for sending a low level command to the MCH.
+        """Internal method for sending a low level command to the MCH via a Moxa
+        server.
 
         This command allows forgetting about the particular details of using
         a Telnet session behind the scenes. A regular command from the MCH
         command line interface can be sent through this interface without
         worrying about the underlying communication.
+        This implementation for the MOXA required splitting any command into
+        chunks of 3-characters or less, to remedy an issue with the MOXA where
+        some of the characters are lost during transmission.
 
         Args:
             command: command to be sent to the MCH.
@@ -92,9 +110,10 @@ class NATMCHMoxa(NATMCHTelnet):
         # Split command into 3-char chunks
         pattern = ".{{1,{chunk_size}}}".format(chunk_size=chunk_size)
         chunks = re.findall(pattern, command)
+        # Write each chunk serially
         for chunk in chunks:
             self._session.write(chunk.encode("ascii"))
             time.sleep(sleep)
-
+        # Send carriage return to issue command
         self._session.write(b"\r")
         time.sleep(sleep)

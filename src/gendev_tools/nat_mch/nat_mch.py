@@ -15,10 +15,11 @@ is achieving a reliable solution with the best performance.
 
 import logging
 from ..gendev_interface import GenDevInterface, ConnType
-from ..gendev_err import ConnNotImplemented, FeatureNotSupported
+from ..gendev_err import ConnNotImplemented, FeatureNotSupported, DHCPEnableFailed
 
 # from .nat_mch_web import NATMCHWeb
 from .nat_mch_telnet import NATMCHTelnet
+from .nat_mch_moxa import NATMCHMoxa
 
 __author__ = "Felipe Torres González"
 __copyright__ = "Copyright 2021, ESS MCH Tools"
@@ -61,6 +62,8 @@ class NATMCH(GenDevInterface):
         manufacturer: str = "NAT",
         serial_num: str = None,
         hostname: str = None,
+        conn_ip_address: str = None,
+        conn_port: int = None,
         vlan: str = None,
         mac_address: str = None,
         logger: logging.Logger = None,
@@ -78,6 +81,8 @@ class NATMCH(GenDevInterface):
             ip_addr: the given IP to the MCH in CSEntry.
             allowed_conn: list of connections supported by the MCH.
             hostname: the registered hostname in CSEntry for the MCH.
+            conn_ip_address: ip address used for the communication with the MCH.
+            conn_port: port used for the communication with the MCH.
             vlan: the registered VLAN in CSEntry for the MCH.
             mac_address: the MAC address of the network interface.
             logger: reference to a Logger instance.
@@ -101,19 +106,32 @@ class NATMCH(GenDevInterface):
         self._ser_conn = None
         self._mox_conn = None
         self._ssh_conn = None
+        self._conn_ip_address = conn_ip_address
+        self._conn_port = conn_port
+
+        # If no connection IP address is provided, use MCH IP address
+        if conn_ip_address is None:
+            self._conn_ip_address = self.ip_address
 
         # Open the valid connections
         # if ConnType.ETHER in self.allowed_conn:
         #     self._eth_conn = NATMCHWeb(self.ip_address)
         if ConnType.TELNET in self.allowed_conn:
-            self._tel_conn = NATMCHTelnet(self.ip_address)
+            self._tel_conn = NATMCHTelnet(
+                ip_address=self.ip_address,
+                hostname=self.hostname,
+            )
         if ConnType.SERIAL in self.allowed_conn:
             raise ConnNotImplemented(
                 "The serial interface is not implemented" " for NAT MCHs."
             )
         if ConnType.MOXA in self.allowed_conn:
-            raise ConnNotImplemented(
-                "The MOXA interface is not implemented" " for NAT MCHs."
+            self._mox_conn = NATMCHMoxa(
+                mch_ip_address=self.ip_address,
+                moxa_ip_address=self._conn_ip_address,
+                port=self._conn_port,
+                logger=None,
+                hostname=self.hostname,
             )
         if ConnType.SSH in self.allowed_conn:
             raise ConnNotImplemented(
@@ -145,8 +163,9 @@ class NATMCH(GenDevInterface):
         """
         # if ConnType.ETHER in self.allowed_conn:
         #     response = self._eth_conn.device_info()
-        # elif ConnType.TELNET in self.allowed_conn:
-        if ConnType.TELNET in self.allowed_conn:
+        if ConnType.MOXA in self.allowed_conn:
+            response = self._mox_conn.device_info()
+        elif ConnType.TELNET in self.allowed_conn:
             response = self._tel_conn.device_info()
         else:
             raise FeatureNotSupported(
@@ -160,12 +179,39 @@ class NATMCH(GenDevInterface):
     def set_dhcp_mode(self):
         """Enables DHCP mode in the network configuration of the device.
 
+        Performs the following steps:
+            - Enables DHCP mode on the MCH.
+            - Sets the internal IP address value to match the address
+              provided by the DHCP server(required to prevent DHCP lease
+              issues).
+            - Sets the hostname value.
+
+        Returns
+            If failure, a tuple containing False, and a message about the
+            failure.
+            If success, a tuple containing True, and an empty string.
+
         Raises:
-            ConnectionError: If the device is not accessible.
+            DHCPEnableFailed: If the setting fails.
             NoValidConn: If no valid connection types supporting this feature
                          are used by the device.
         """
-        raise NotImplementedError("This feature is not implemented yet")
+        if ConnType.MOXA in self.allowed_conn:
+            success, response = self._mox_conn.set_dhcp_mode()
+        elif ConnType.TELNET in self.allowed_conn:
+            success, response = self._tel_conn.set_dhcp_mode()
+        else:
+            raise FeatureNotSupported(
+                (
+                    "Setting the DHCP mode is not supported for the given"
+                    "connection type"
+                )
+            )
+
+        if not success:
+            raise DHCPEnableFailed(response)
+
+        return success, response
 
     def update_fw(self, fw_version: str, part: str):
         """Update the firmware of the device.
@@ -192,6 +238,8 @@ class NATMCH(GenDevInterface):
         """
         if ConnType.TELNET in self.allowed_conn:
             response = self._tel_conn.update_fw(fw_version)
+        elif ConnType.MOXA in self.allowed_conn:
+            response = self._moxa_conn.update_fw(fw_version)
         else:
             raise FeatureNotSupported(
                 "Impossible to update the fw of the"
@@ -255,6 +303,8 @@ class NATMCH(GenDevInterface):
         """
         if ConnType.TELNET in self.allowed_conn:
             self._tel_conn._reboot(sleep)
+        if ConnType.MOXA in self.allowed_conn:
+            self._moxa_conn._reboot(sleep)
         else:
             raise FeatureNotSupported(
                 "Impossible to reboot the device"
