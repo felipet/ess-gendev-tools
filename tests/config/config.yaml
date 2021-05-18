@@ -2,6 +2,10 @@
 # Unitest config data for the NATMCHTelnet class
 valid_ip_address: '172.30.5.238'
 invalid_ip_address: '171.30.5.1'
+moxa_valid_ip_address: '172.30.5.102'
+moxa_invalid_ip_address: '171.30.5.102'
+moxa_valid_port: 6
+moxa_invalid_port: 1
 # Valid device information dictionary for checking device_info()
 device_info:
     board:
