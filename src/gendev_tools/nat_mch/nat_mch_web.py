@@ -19,7 +19,7 @@ import requests as rq
 from logging import Logger
 from collections import OrderedDict
 from bs4 import BeautifulSoup
-from ..gendev_err import FeatureNotSupported
+from ..gendev_err import FeatureNotSupported, NoRouteToDevice
 
 __author__ = "Felipe Torres González"
 __copyright__ = "Copyright 2021, ESS MCH Tools"
@@ -65,6 +65,10 @@ class NATMCHWeb:
             "Connection": "keep-alive",
         }
 
+        is_mch = self._check_is_mch()
+        if not is_mch[0]:
+            raise NoRouteToDevice(is_mch[1])
+
         # Regular expresions for parsing data
         self._match_fw_ver = re.compile(
             r"Firmware Version\n(V\d{1,2}\.\d{1,2}\.\d{1,2})"
@@ -78,6 +82,48 @@ class NATMCHWeb:
         self._match_mac_addr = re.compile(r"IEEE Address\n(([\d\D]{2}:?){6})")
         self._match_subnet_mask = re.compile(r"Subnet Mask\n((\d{1,3}\.?){4})")
         self._match_gateway_addr = re.compile(r"Gateway Address\n((\d{1,3}\.?){4})")
+
+    def _check_is_mch(self):
+        """Method to check that the device associated with the IP address
+        is an MCH.
+
+        Returns:
+            False, if not an MCH.
+            True, if is an MCH.
+        """
+        is_mch = True
+        message = None
+
+        try:
+            response = rq.get(
+                "http://{}/index.asp".format(self.ip_address),
+                headers=self._http_headers,
+            )
+        except Exception as e:
+            if isinstance(e, rq.exceptions.ConnectionError):
+                raise NoRouteToDevice(
+                    "Error connecting to MCH web interface at {0}:".format(
+                        self.ip_address
+                    )
+                )
+
+        if not response.ok:
+            is_mch = False
+            message = "Unable to reach device at {0}, status code {1}:".format(
+                self.ip_address, response.status_code
+            )
+        else:
+            html_content = BeautifulSoup(response.text, "html.parser")
+            title = html_content.head.title.text
+
+            if not title == "MCH Configuration":
+                is_mch = False
+                message = (
+                    "Device at IP {0} is not an MCH. Retrieved description"
+                    " of device: ''{1}''".format(self.ip_address, title)
+                )
+
+        return is_mch, message
 
     def _parse_basecfg(self, response):
         """Internal method to parse the HTML content for the base configuration.
@@ -131,7 +177,7 @@ class NATMCHWeb:
                 if not input_params:
                     continue
 
-                # How many fileds does this setting have?
+                # How many fields does this setting have?
                 if len(input_params) > 1:
                     name = input_params[0]["name"]
                     value = [v["value"] for v in input_params]
@@ -164,8 +210,11 @@ class NATMCHWeb:
             resp_dict["board"]["fpga_ver"] = self._match_fpga_ver.search(
                 raw_info
             ).group(1)
-            resp_dict["board"]["mcu_ver"] = self._match_mcu_ver.search(raw_info).group(
-                1
+            # The web interface returns the version number with the prefix 'V',
+            # while the other interfaces have no prefix.
+            # Remove the prefix for consistency
+            resp_dict["board"]["mcu_ver"] = (
+                self._match_mcu_ver.search(raw_info).group(1).strip("V")
             )
             resp_dict["board"]["serial_num"] = self._match_board_sn.search(
                 raw_info
