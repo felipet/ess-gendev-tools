@@ -19,13 +19,12 @@ import requests as rq
 from logging import Logger
 from collections import OrderedDict
 from bs4 import BeautifulSoup
-from ..gendev_err import FeatureNotSupported, NoRouteToDevice
+from ..gendev_err import FeatureNotSupported, NoRouteToDevice, WebChanged
 
-__author__ = "Felipe Torres González"
+__author__ = ["Felipe Torres González", "Ross Elliot"]
 __copyright__ = "Copyright 2021, ESS MCH Tools"
-__credits__ = ["Felipe Torres González", "Ross Elliot", "Jeong Han Lee"]
 __license__ = "GPL-3.0"
-__version__ = "0.1"
+__version__ = "0.3"
 __maintainer__ = "Felipe Torres González"
 __email__ = "felipe.torresgonzalez@ess.eu"
 __status__ = "Development"
@@ -98,6 +97,7 @@ class NATMCHWeb:
             response = rq.get(
                 "http://{}/index.asp".format(self.ip_address),
                 headers=self._http_headers,
+                timeout=2,
             )
         except Exception as e:
             if isinstance(e, rq.exceptions.ConnectionError):
@@ -191,7 +191,100 @@ class NATMCHWeb:
                 # No more stuff to parse for this row
                 continue
 
-        return mch_config
+        # The previous set of parameters will be encapsulated so
+        # a global dictionary can contain other set of parameters
+        globalcfg = OrderedDict()
+        globalcfg["Base MCH parameter"] = mch_config
+
+        return globalcfg
+
+    def _parse_pcie(self, response):
+        """Internal method to parse the HTML content for the PCIe configuration.
+
+        This method receives the content of the page /goform/pcie_vs_config* and
+        extracts the information from the Link width and Virtual swith tables.
+
+        Args:
+            response: The output from the requests.get call.
+
+        Returns:
+            A OrderedDict containing the settings for the PCIe configuration
+            page in the MCH webpage.
+        """
+        mch_config = OrderedDict()
+        # Use lxml as parser, html.parser doesn't parse this web properly!
+        html_content = BeautifulSoup(response.text, "lxml")
+        # Divide the content by forms
+        forms = html_content.body.find_all("form")
+
+        # The first form contains the Link with configuration
+        cfgtitle = "Link Width Configuration"
+        if (
+            forms[0].attrs["action"] != "/goform/pcie_width_link_ctrl"
+            or forms[1].attrs["action"] != "/goform/pcie_vs_cfg_refresh"
+        ):
+            raise WebChanged("The PCIe configuration page has changed its format")
+
+        # There're 3 tables, each one configures a pair of adjacent AMC slots.
+        # From each table, get the value selecting a link with for each pair
+        # of AMC slots.
+        link_inputs = forms[0].find_all("input")
+        mch_config[cfgtitle] = OrderedDict()
+        curr_station = "Station_0"
+
+        for input in link_inputs:
+            if input["name"] == curr_station:
+                if "checked" in input.attrs:
+                    mch_config[cfgtitle][curr_station] = input["value"]
+                    next_station = int(curr_station[-1]) + 1
+                    curr_station = "Station_{}".format(next_station)
+
+        # Now, extract the information from the table with the Virtual Switch
+        # Configuration.
+        cfgtitle = "PCIe Virtual Switch configurationt"
+        mch_config[cfgtitle] = OrderedDict()
+
+        # The first kind of rows are indexed by the index.
+        indexes = [str(i) for i in range(6)]
+        indexes = ["none"] + indexes
+        indexes.append("Max. Link Speed")
+
+        # Now, iterate over the rows of the table
+        rows = forms[1].find_all("tr")
+
+        for row in rows:
+            # Let's skip all the initial rows with no data to be collected
+            # Only the first th field is properly parsed, so this dirty trick
+            # came up to cope with the issue:
+            title = row.find("b")
+            if title is None or (title is not None and title.text not in indexes):
+                continue
+
+            # Check whether the first select field is enabled in the row
+            selects = row.find_all("select")
+
+            # The row tagged with "none" has not select input fields
+            if selects != []:
+                # First, parse the Upstream option
+                for s in selects:
+                    for option in s.find_all("option"):
+                        if "selected" in option.attrs:
+                            mch_config[cfgtitle][s["name"]] = option["value"]
+
+            # Now, iterate over the columns and check what radio buttons
+            # are checked.
+
+            for input in row.find_all("input"):
+                if "checked" in input.attrs and "disabled" not in input.attrs:
+                    name = input["name"]
+                    mch_config[cfgtitle][name] = input["value"]
+
+        # The previous set of parameters will be encapsulated so
+        # a global dictionary can contain other set of parameters
+        pciecfg = OrderedDict()
+        pciecfg["PCIe parameter"] = mch_config
+
+        return pciecfg
 
     def device_info(self) -> dict:
         """Device info method."""
@@ -247,7 +340,7 @@ class NATMCHWeb:
         the MCH. Then, the MCH analyses it and decides whether is a valid MCH
         firmware image or not. If so, it provides a checkbox and a new form so
         an user can click and proceed with the udpate. Automatizing this process
-        produces an error in the MCH (_multiple access error_).
+        produces an error in the MCH (*multiple access error*).
         I couldn't find a solution for that, which doesn't means it doesn't
         exists because my experience with web programming is quite limited.
         """
@@ -282,7 +375,7 @@ class NATMCHWeb:
         """
         raise FeatureNotSupported("Method not implemented yet.")
 
-    def get_configuration(self, category: str = None):
+    def get_configuration(self, category: str = None) -> OrderedDict:
         """Get the configuration of the device.
 
         This method returns a dictionary containing the configuration
@@ -303,13 +396,26 @@ class NATMCHWeb:
                       the previous item list.
 
         Returns:
-            - On success, a dictionary containing the configuration of the device.
-            - If a wrong category was given as input, an empty dictionary.
+            OrderedDict: An ordered dict containing the settings in the same
+            ordered as they are found in the web page. When *category* =
+            **backplane**, the dictionary conatins only one key (*Backplane
+            Configuration*) and the whole configuration file as value for that
+            key.
         """
-        cfgword = "change_mch_cfg" if category == "basecfg" else None
-        mch_config = OrderedDict()
+        # Check the input parameter
+        if category == "basecfg":
+            cfgword = "change_mch_cfg"
+        elif category == "pcie":
+            cfgword = "pcie_width_link_ctrl"
+        elif category == "backplane":
+            # Request the generation of the script file to the MCH
+            cfgword = "web_cfg_backup_show_menu"
+        else:
+            cfgword = ""
 
-        if cfgword is None:
+        mch_config: OrderedDict = OrderedDict()
+
+        if cfgword == "":
             return mch_config
 
         response = rq.get(
@@ -318,8 +424,18 @@ class NATMCHWeb:
         )
 
         if response.ok:
-            # Let's parse the content
-            parse_method = getattr(self, "_parse_{}".format(category))
-            mch_config = parse_method(response)
+            if category != "backplane":
+                # Let's parse the content
+                parse_method = getattr(self, "_parse_{}".format(category))
+                mch_config = parse_method(response)
+            else:
+                cfgword = "nat_mch_startup_cfg.txt"
+                response = rq.get(
+                    "http://{}/{}".format(self.ip_address, cfgword),
+                    headers=self._http_headers,
+                )
+                mch_config["Backplane Configuration"] = (
+                    response.text if response.ok else ""
+                )
 
         return mch_config
