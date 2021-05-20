@@ -93,3 +93,23 @@ class FeatureNotSupported(Exception):
             return "ConnTimeout, {0} ".format(self.message)
         else:
             return "ConnTimeout has been raised"
+
+
+class WebChanged(Exception):
+    """The content of the Web page has changed.
+
+    This exception is raised when the parser fails analysing the content of the
+    web interface of the device.
+    """
+
+    def __init__(self, *args):
+        if args:
+            self.message = args[0]
+        else:
+            self.message = None
+
+    def __str__(self):
+        if self.message:
+            return "WebChanged, {0} ".format(self.message)
+        else:
+            return "WebChanged has been raised"
