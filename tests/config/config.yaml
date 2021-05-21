@@ -3,17 +3,198 @@
 valid_ip_address: '172.30.5.238'
 invalid_ip_address: '171.30.5.1'
 # Valid device information dictionary for checking device_info()
-device_info:
-    board:
-        fw_ver: 'V2.21.8'
-        fpga_ver: 'V1.14'
-        mcu_ver: '1.2'
-        serial_num: '113522-1426'
-    network:
-        ip_address: '172.30.5.238'
-        mac_address: '00:40:42:22:05:92'
-        subnet_address: '255.255.252.0'
-        gateway_address: '172.30.7.254'
 update_fw:
-    valid_fw: '2.21.8'
-    invalid_fw: '2.19.4'
+  valid_fw: '2.21.8'
+  invalid_fw: '2.19.4'
+board:
+  fpga_ver: V1.14
+  fw_ver: V2.21.8
+  mcu_ver: '1.2'
+  serial_num: 113522-1426
+network:
+  gateway_address: 172.30.7.254
+  ip_address: 172.30.5.238
+  mac_address: 00:40:42:22:05:92
+  subnet_address: 255.255.252.0
+# Configuration taken from an MCH manually configured. Used as golden values.
+Base MCH parameter:
+  MCH global parameter:
+    if_rem_gb: '0'
+    rmcp_enable: '4'
+    telnet_enable: '8'
+    ssh_enable: '0'
+    http_enable: '16'
+    ip_src_mgmt: '2'
+    ip_src_gbe: '0'
+    rmcp_timeout_min: '0'
+    rmcp_timeout_sec: '60'
+    telnet_timeout: '300'
+    default_fan_level: '30'
+    watchdog_enable: '0'
+    alternative_cooling: '0'
+    pm_assignment_strategy: '0'
+    pm_use_bm_for_ertm15: '0'
+    ipmi_compatibility_mode: '1'
+  Shelf manager parameter:
+    shm_allow_invalid_fru: '1'
+    shm_temperature_mgmt: '2'
+    shm_emergency_shutdown: '0'
+    shm_send_msg_confirmation: '0'
+    shm_external: '0'
+  Carrier manager parameter:
+    cm_default_carrier_nr: '0'
+    cm_quiesced_event_timeout: '30'
+    cm_allow_invalid_fru: '1'
+    cm_fru_overrule: '0'
+    cm_shutdown: '0'
+    cm_clock_ekey: '0'
+    cm_dbg_ipmi: '0'
+    cm_dbg_fru: '0'
+    cm_dbg_ekey: '0'
+    cm_dbg_sensor: '0'
+    cm_dbg_event: '0'
+    cm_dbg_pm: '0'
+    cm_dbg_cu: '0'
+    cm_dbg_shm_if: '0'
+    cm_dbg_fru_id: '0'
+  SEL parameter:
+    sel_keep_on_read: '0'
+    sel_use_nvram: '2'
+    sel_ignore_version_change_sensor: '4'
+  Ethernet switch parameter:
+    eth_cfg_src: '0'
+    eth_ignore_bp: '0'
+  Clock module parameter:
+    clock_cfg_src: '1'
+  PCIe parameter:
+    pcie_up_delay: '30'
+    pcie_up_delay_amc: '0'
+    pcie_ssc_enable: '0'
+    pcie_hot_plug: '0'
+    pcie_early_ekey: '0'
+    pcie_no_ekey: '0'
+    pcie_mch_rtm: '0'
+    pcie_cfg_src: '1'
+  Time Protocol / SNTP parameter:
+    ntp_server_ip0:
+    - '172'
+    - '30'
+    - '0'
+    - '38'
+    ntp_update_min: '0'
+    ntp_update_hour: '0'
+    ntp_local_offset: '0'
+    ntp_protocol: '2'
+    ntp_enable: '1'
+  DHCP parameter:
+    dhcp_hostname: ''
+  SNMP parameter:
+    snmp_enable: '0'
+    snmp_trap_ip0:
+    - '0'
+    - '0'
+    - '0'
+    - '0'
+  Xilinx Virtual Cable parameter:
+    xvcd_enable: '0'
+    xvcd_base_port: '2542'
+    xvcd_max_freq: '31'
+    ipmi_mon_enabled: '0'
+    ipmi_mon_ip0:
+    - '0'
+    - '0'
+    - '0'
+    - '0'
+    ipmi_mon_port: '623'
+    primary_mch_ip_enable: '0'
+    primary_mch_ip_addr0:
+    - '0'
+    - '0'
+    - '0'
+    - '0'
+    primary_mch_ip_netmask0:
+    - '0'
+    - '0'
+    - '0'
+    - '0'
+    primary_mch_ip_gw0:
+    - '0'
+    - '0'
+    - '0'
+    - '0'
+  IPMI monitor over ethernet:
+    ipmi_mon_enabled: '0'
+    ipmi_mon_ip0:
+    - '0'
+    - '0'
+    - '0'
+    - '0'
+    ipmi_mon_port: '623'
+    primary_mch_ip_enable: '0'
+    primary_mch_ip_addr0:
+    - '0'
+    - '0'
+    - '0'
+    - '0'
+    primary_mch_ip_netmask0:
+    - '0'
+    - '0'
+    - '0'
+    - '0'
+    primary_mch_ip_gw0:
+    - '0'
+    - '0'
+    - '0'
+    - '0'
+  Primary IP parameter:
+    primary_mch_ip_enable: '0'
+    primary_mch_ip_addr0:
+    - '0'
+    - '0'
+    - '0'
+    - '0'
+    primary_mch_ip_netmask0:
+    - '0'
+    - '0'
+    - '0'
+    - '0'
+    primary_mch_ip_gw0:
+    - '0'
+    - '0'
+    - '0'
+    - '0'
+PCIe parameter:
+  Link Width Configuration:
+    Station_0: '3'
+    Station_1: '3'
+    Station_2: '3'
+  PCIe Virtual Switch configurationt:
+    VS0_Up: AMC2_4
+    AMC1_4: VS0
+    AMC1_8: VS0
+    AMC2_8: VS0
+    AMC3_4: VS0
+    AMC3_8: VS0
+    AMC4_4: VS0
+    AMC4_8: VS0
+    AMC5_4: VS0
+    AMC5_8: VS0
+    AMC6_4: VS0
+    AMC6_8: VS0
+    VS1_Up: NONE
+    VS2_Up: NONE
+    VS3_Up: NONE
+    VS4_Up: NONE
+    VS5_Up: NONE
+    LS1_4_Max: LS_2
+    LS1_8_Max: LS_2
+    LS2_4_Max: LS_2
+    LS2_8_Max: LS_2
+    LS3_4_Max: LS_2
+    LS3_8_Max: LS_2
+    LS4_4_Max: LS_2
+    LS4_8_Max: LS_2
+    LS5_4_Max: LS_2
+    LS5_8_Max: LS_2
+    LS6_4_Max: LS_2
+    LS6_8_Max: LS_2

@@ -13,6 +13,7 @@ deps =
     pytest-testconfig == 0.2.0
     pytest-cov >= 2.11.1
     bs4 >= 0.0.1
+    lxml >= 4.6.3
 commands =
     pytest {posargs: --tc-file=tests/config/config.yaml --tc-format=yaml --cov gendev_tools --cov-report=xml --junitxml=unittest.xml}
 
