@@ -1,17 +1,18 @@
 ---
-# Unitest config data for the NATMCHTelnet class
-valid_ip_address: '172.30.5.238'
-invalid_ip_address: '171.30.5.1'
-# Valid device information dictionary for checking device_info()
-update_fw:
-  valid_fw: '2.21.8'
-  invalid_fw: '2.19.4'
-board:
+Metadata:
+  # Unitest config data for the NATMCHTelnet class
+  valid_ip_address: '172.30.5.238'
+  invalid_ip_address: '171.30.5.1'
+  # Valid device information dictionary for checking device_info()
+  update_fw:
+    valid_fw: '2.21.8'
+    invalid_fw: '2.19.4'
+Board:
   fpga_ver: V1.14
   fw_ver: V2.21.8
   mcu_ver: '1.2'
   serial_num: 113522-1426
-network:
+Network:
   gateway_address: 172.30.7.254
   ip_address: 172.30.5.238
   mac_address: 00:40:42:22:05:92
