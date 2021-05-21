@@ -23,18 +23,18 @@ __status__ = "Development"
 
 class TestNATMCHWeb:
     def setup(self):
-        self.valid_web = NATMCHWeb(config["valid_ip_address"])
+        self.valid_web = NATMCHWeb(config["Metadata"]["valid_ip_address"])
 
     def test_check_is_mch(self):
         """Test for an incorrect IP address"""
         with pytest.raises(NoRouteToDevice):
-            self.invalid_web = NATMCHWeb(config["invalid_ip_address"])
+            self.invalid_web = NATMCHWeb(config["Metadata"]["invalid_ip_address"])
 
     def test_device_info(self):
         """Test that the device info is scraped from the web interface"""
         device_info = self.valid_web.device_info()
-        assert config["board"] == device_info["board"]
-        assert config["network"] == device_info["network"]
+        assert config["Board"] == device_info["Board"]
+        assert config["Network"] == device_info["Network"]
 
     def test_update_fw(self):
         """Test the firmware update feature."""

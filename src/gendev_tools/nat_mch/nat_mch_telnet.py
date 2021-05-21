@@ -149,32 +149,32 @@ class NATMCHTelnet:
 
         if raw_info_version != "" and raw_info_network != "":
             resp_dict = dict()
-            resp_dict["board"] = dict()
+            resp_dict["Board"] = dict()
 
-            resp_dict["board"]["fw_ver"] = self._match_fw_ver.search(
+            resp_dict["Board"]["fw_ver"] = self._match_fw_ver.search(
                 raw_info_version
             ).group(1)
-            resp_dict["board"]["fpga_ver"] = self._match_fpga_ver.search(
+            resp_dict["Board"]["fpga_ver"] = self._match_fpga_ver.search(
                 raw_info_version
             ).group(1)
-            resp_dict["board"]["mcu_ver"] = self._match_mcu_ver.search(
+            resp_dict["Board"]["mcu_ver"] = self._match_mcu_ver.search(
                 raw_info_version
             ).group(1)
-            resp_dict["board"]["serial_num"] = self._match_board_sn.search(
+            resp_dict["Board"]["serial_num"] = self._match_board_sn.search(
                 raw_info_version
             ).group(1)
 
-            resp_dict["network"] = dict()
-            resp_dict["network"]["ip_address"] = self._match_ip_addr.search(
+            resp_dict["Network"] = dict()
+            resp_dict["Network"]["ip_address"] = self._match_ip_addr.search(
                 raw_info_network
             ).group(1)
-            resp_dict["network"]["mac_address"] = self._match_mac_addr.search(
+            resp_dict["Network"]["mac_address"] = self._match_mac_addr.search(
                 raw_info_network
             ).group(1)
-            resp_dict["network"]["subnet_address"] = self._match_subnet_mask.search(
+            resp_dict["Network"]["subnet_address"] = self._match_subnet_mask.search(
                 raw_info_network
             ).group(1)
-            resp_dict["network"]["gateway_address"] = self._match_gateway_addr.search(
+            resp_dict["Network"]["gateway_address"] = self._match_gateway_addr.search(
                 raw_info_network
             ).group(1)
 
